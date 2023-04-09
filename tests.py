@@ -1,9 +1,12 @@
 import numpy as np
 
-from calc_methods import SORCalcMethod
+from calc_methods import SORCalcMethod, GaussCalcMethod
 
 
 def test1():
+    """
+    Функция для проверки методов решения СЛАУ
+    """
     A = np.random.sample((3, 3))
     B = np.random.sample(3)
     A1 = np.array([
@@ -13,7 +16,14 @@ def test1():
     ], dtype=float)
     B1 = np.array([4, 3, 1], dtype=float)
 
-    # x = GaussCalcMethod(A.copy(), B.copy()).calculate()
+    x = GaussCalcMethod(A1.copy(), B1.copy()).calculate()
+    print(B1)
+    print('\n \n')
+    print(np.dot(A1, x))
+
+
+    print('\n \n')
+    print('\n \n')
 
     a = np.array([
         [31., -13., 0., 0., 0., -10., 0., 0., 0.],

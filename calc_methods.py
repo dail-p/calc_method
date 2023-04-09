@@ -77,26 +77,33 @@ class SORCalcMethod(BaseCalcMethodSystemEquations):
     """
     Метод решения SOR.
     """
-    def __init__(self, A, B, x0, omega=1.5, precision=10e-4, max_iter=2000):
+    def __init__(self, A, B, x0, omega=1.6, precision=10e-6, max_iter=300000):
         super().__init__(A, B)
         self.precision = precision
         self.max_iter = max_iter
         self.x0 = x0
         self.omega = omega
+        self.iter = 0
+        self.reration = []
 
     def run(self):
         x = self.x0.copy()
-        iter = 0
         error = 1
-        while error > self.precision and iter < self.max_iter:
+        x_new = np.copy(x)
+        while error > self.precision and self.iter < self.max_iter:
             for i in range(self.dim):
-                x[i] = x[i] - self.omega / self.matrix[i, i] * (
-                        np.dot(self.matrix[i], x)
-                        - self.vector[i]
-                )
+                new_values_sum  = np.dot(self.matrix[i,:i], x_new[:i])
+                old_values_sum  = np.dot(self.matrix[i, i+1:], x[i+1:])
+                x_new[i] = self.omega * (
+                        self.vector[i]
+                        - new_values_sum
+                        - old_values_sum
+                ) / self.matrix[i][i] + (1 - self.omega) * x[i]
 
-            iter += 1
+            self.iter += 1
+            x = x_new
             error = np.linalg.norm(np.dot(self.matrix, x) - self.vector)
+            self.reration.append(error)
 
         return x
 

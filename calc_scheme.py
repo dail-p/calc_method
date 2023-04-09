@@ -7,11 +7,10 @@ class BaseScheme(metaclass=ABCMeta):
     """
     Базовый класс для описания вычислительной схемы
     """
-    def __init__(self, n, tay=0, L=1):
-        self.h = L / (n-1)
-        self.tay = tay
+    def __init__(self, n, length=1):
+        self.h = length / (n-1)
         self.n = n
-        self.create_mesh()
+        self.mesh = self.create_mesh()
 
     def get_system(self):
         """
@@ -31,7 +30,7 @@ class BaseScheme(metaclass=ABCMeta):
 
     def get_free_part(self):
         """
-        Возвращает столбец возмужений
+        Возвращает столбец правой части f[i]
         """
 
     def create_mesh(self):
@@ -44,14 +43,21 @@ class HeatInTheRod(BaseScheme):
     """
     Вычислительная схема для задачи одномерного распределения тепла в стержне
     """
+    def __init__(self, *args, k=1, **kwargs):
+        super(HeatInTheRod, self).__init__(*args, **kwargs)
+        self.k = k
+
     def create_mesh(self):
-        self.mesh = np.array([i*self.h for i in range(self.n)], dtype=float)
+        return np.array([i*self.h for i in range(self.n)], dtype=float)
+
+    def get_exact_solution(self):
+        return lambda x: x - np.sin(16 * np.pi * x) / 16
 
     def get_free_part(self):
-        return np.sin(np.pi * self.mesh)
+        return 16 * np.pi * np.pi * np.sin(16 * np.pi * self.mesh)
 
     def get_boundary_conditions(self):
-        return (0, 1)
+        return 0, 1
 
     def get_initial_conditions(self):
         return np.zeros(self.n, dtype=float)
@@ -61,7 +67,7 @@ class HeatInTheRod(BaseScheme):
         """
         :return: (doun, main, up)
         """
-        return (-1, 2, -1)
+        return self.k / (self.h * self.h), -2 * self.k / (self.h * self.h), self.k / (self.h * self.h)
 
     def create_matrix(self):
         b, a, c = self.coefficients
@@ -72,17 +78,20 @@ class HeatInTheRod(BaseScheme):
         matrix[np.diag(rows, k=-1), np.diag(cols, k=-1)] = b
         np.fill_diagonal(matrix, a)
 
+        matrix[0] = matrix[self.n - 1] = np.zeros(self.n, dtype=float)
+
+        matrix[0, 0] = matrix[self.n-1, self.n-1] = 1
+
         return matrix
 
     def get_system(self):
         A = self.create_matrix()
         B = self.get_free_part()
 
-        b, a, c = self.coefficients
         begin, end = self.get_boundary_conditions()
 
-        B[0] -= b * begin
-        B[self.n - 1] -= c * end
+        B[0] = begin
+        B[self.n - 1] = end
 
         return A, B
 
